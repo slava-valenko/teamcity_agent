@@ -2,7 +2,7 @@ galaxy_info:
   author: Slava Valenko
 
   role_name: teamcity_agent
-  namespace: vvalenko
+  namespace: slava_valenko
 
 
   description: Install Teamcity Agent
