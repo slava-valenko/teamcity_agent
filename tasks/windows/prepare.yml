@@ -1,0 +1,6 @@
+---
+
+- name: Windows | Prepare | Create Agent Build dir
+  win_file:
+    path: "{{ __teamcity_agent_win_install_path }}"
+    state: directory

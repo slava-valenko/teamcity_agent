@@ -1,0 +1,87 @@
+---
+########################################################
+# Prepare system
+- name: Linux | Agent | Install zip
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  with_items:
+    - zip
+
+- name: Linux | Agent | Create install directory
+  ansible.builtin.file:
+    path: "{{ __teamcity_agent_install_path }}"
+    state: directory
+    owner: "{{ teamcity_agent_service_user }}"
+    group: "{{ teamcity_agent_service_group }}"
+    mode: 0755
+
+- name: Linux | Agent | Create download directory
+  ansible.builtin.file:
+    path: "{{ __teamcity_agent_install_path }}/../{{ __teamcity_agent_install_path.split('/')[-1] }}_arch"
+    state: directory
+    mode: 0755
+
+########################################################
+# Install Agent
+- name: Linux | Agent | Download Agent
+  ansible.builtin.get_url:
+    url: "http://{{ teamcity_agent_server_name }}:{{ teamcity_agent_server_port }}/update/buildAgent.zip"
+    dest: "{{ __teamcity_agent_install_path }}/../{{ __teamcity_agent_install_path.split('/')[-1] }}_arch"
+    timeout: 30
+  register: teamcity_agent_register_download
+
+- name: Linux | Agent | Unpack distribution
+  when: teamcity_agent_register_download.changed
+  ansible.builtin.unarchive:
+    src: "{{ __teamcity_agent_install_path }}/../{{ __teamcity_agent_install_path.split('/')[-1] }}_arch/buildAgent.zip"
+    dest: "{{ __teamcity_agent_install_path }}"
+    owner: "{{ teamcity_agent_service_user }}"
+    group: "{{ teamcity_agent_service_group }}"
+    remote_src: true
+
+########################################################
+# Configure Agent
+- name: Linux | Agent | Copy configuration
+  ansible.builtin.copy:
+    src: "{{ __teamcity_agent_install_path }}/conf/buildAgent.dist.properties"
+    dest: "{{ __teamcity_agent_install_path }}/conf/buildAgent.properties"
+    remote_src: true
+    owner: "{{ teamcity_agent_service_user }}"
+    group: "{{ teamcity_agent_service_group }}"
+    force: false
+    mode: '0644'
+
+- name: Linux | Agent | Set configuration
+  ansible.builtin.lineinfile:
+    path: "{{ __teamcity_agent_install_path }}/conf/buildAgent.properties"
+    regex: "{{ item.regex }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regex: "^serverUrl="
+      line: "serverUrl=http://{{ teamcity_agent_server_name }}:{{ teamcity_agent_server_port }}/"
+    - regex: "^name="
+      line: "name={{ teamcity_agent_name }}"
+
+########################################################
+# Set Agent service
+
+- name: Linux | Agent | Set systemd
+  ansible.builtin.template:
+    src: "teamcity-agent.service.j2"
+    dest: "/etc/systemd/system/teamcity-agent.service"
+    mode: 0644
+
+- name: Linux | Agent | Start agent
+  ansible.builtin.service:
+    name: teamcity-agent
+    state: started
+    enabled: true
+  register: teamcity_agent_register_started
+
+- name: Linux | Agent | Check started
+  when: teamcity_agent_register_started.changed
+  wait_for:
+    path: "{{ __teamcity_agent_install_path }}/logs/teamcity-agent.log"
+    search_regex: "Updating agent parameters on the server"

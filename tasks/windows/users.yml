@@ -1,0 +1,35 @@
+---
+# Version to think:
+# https://confluence.jetbrains.com/display/TCD10/Setting+up+and+Running+Additional+
+#    Build+Agents#SettingupandRunningAdditionalBuildAgents-NecessaryOSandenvironmentpermissions
+- name: Windows | Users | Check service
+  ansible.windows.win_service_info:
+    name: TeamCity Agent
+  register: teamcity_agent_check_service
+
+- name: Windows | Users | Add user
+  when: not teamcity_agent_check_service.exists
+  no_log: true
+  win_user:
+    name: "{{ teamcity_agent_win_service_user }}"
+    password: "{{ teamcity_agent_win_service_password }}"
+    state: present
+    groups: "Users,Administrators"
+    password_never_expires: true
+
+# Full right:
+#   https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-R2-and-2008/
+#      dd349804(v=ws.10)?redirectedfrom=MSDN
+- name: Windows | Users | Add account to Log on as a service
+  ansible.windows.win_user_right:
+    name: SeServiceLogonRight
+    users:
+      - "{{ teamcity_agent_win_service_user }}"
+    action: add
+
+- name: Windows | Users | Create right to group TC
+  ansible.windows.win_acl:
+    user: "{{ teamcity_agent_win_service_user }}"
+    path: "{{ __teamcity_agent_win_install_path }}"
+    type: allow
+    rights: Modify,Write,FullControl

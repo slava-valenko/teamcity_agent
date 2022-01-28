@@ -1,0 +1,12 @@
+---
+
+- name: Linux | Users | Create group
+  group:
+    name: "{{ teamcity_agent_service_group }}"
+    state: present
+
+- name: Linux | Users | Create user
+  user:
+    name: "{{ teamcity_agent_service_user }}"
+    group: "{{ teamcity_agent_service_group }}"
+    state: present

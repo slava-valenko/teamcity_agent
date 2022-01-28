@@ -1,0 +1,43 @@
+---
+
+# Get facts about system
+- name: Main | Generate facts for the future
+  setup:
+  when: ansible_facts['os_product_type'] is not defined
+
+# Install to Debian
+- name: Main | block | Linux installation
+  when:
+    - ansible_os_family == "Debian"
+  block:
+
+    - name: Main | Create Linux users
+      import_tasks: linux/users.yml
+
+    - name: Main | Deploy Linux agent
+      import_tasks: linux/teamcity_agent.yml
+
+# Install to Windows
+- name: Main | block | Windows installation
+  when:
+    - ansible_os_family == "Windows"
+  block:
+
+    - name: Main | Prepare
+      import_tasks: windows/prepare.yml
+
+    - name: Main | Create Windows users
+      import_tasks: windows/users.yml
+
+    - name: Main | Deploy Windows agent
+      import_tasks: windows/teamcity_agent.yml
+
+    - name: Main | Absent Admin role
+      import_tasks: windows/users_after.yml
+
+# Authorize Agent
+- name: Main | Autorize new Agent
+  when:
+    - teamcity_agent_register_started.changed or
+      teamcity_agent_register_win_started.changed
+  include_tasks: authorize_agent.yml

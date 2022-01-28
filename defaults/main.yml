@@ -1,0 +1,21 @@
+---
+# Name or IP servers
+teamcity_agent_server_name: localhost
+teamcity_agent_server_port: 8111
+
+# Admin Teamcity
+teamcity_agent_server_user_name: teamcity
+teamcity_agent_server_user_password: teamcity
+
+# Name agent
+teamcity_agent_name: "{{ ansible_hostname }}"
+
+########################################################
+# Linux agent
+teamcity_agent_service_user: teamcity
+teamcity_agent_service_group: teamcity
+
+########################################################
+# Windows Agent
+teamcity_agent_win_service_user: teamcity
+teamcity_agent_win_service_password: teamcity

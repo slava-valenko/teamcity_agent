@@ -1,0 +1,78 @@
+---
+
+- name: Windows | Agent | Create tmp directory
+  ansible.windows.win_file:
+    path: "{{ __teamcity_agent_win_path }}"
+    state: directory
+
+- name: Windows | Agent | Download Agent Package
+  win_get_url:
+    url: "http://{{ teamcity_agent_server_name }}:{{ teamcity_agent_server_port }}/update/buildAgent.zip"
+    dest: "{{ __teamcity_agent_win_path }}"
+    validate_certs: false
+  register: teamcity_agent_register_download_agent
+
+- name: Windows | Agent | Unpack distribution
+  when: teamcity_agent_register_download_agent.changed
+  win_unzip:
+    src: "{{ __teamcity_agent_win_path }}\\buildAgent.zip"
+    dest: "{{ __teamcity_agent_win_install_path }}"
+
+- name: Windows | Agent | Copy configuration
+  win_copy:
+    src: "{{ __teamcity_agent_win_install_path }}\\conf\\buildAgent.dist.properties"
+    dest: "{{ __teamcity_agent_win_install_path }}\\conf\\buildAgent.properties"
+    remote_src: true
+    force: false
+
+- name: Windows | Agent | Set configuration
+  community.windows.win_lineinfile:
+    path: "{{ __teamcity_agent_win_install_path }}\\conf\\buildAgent.properties"
+    regex: "{{ item.regex }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regex: "^serverUrl="
+      line: "serverUrl=http://{{ teamcity_agent_server_name }}:{{ teamcity_agent_server_port }}/"
+    - regex: "^name="
+      line: "name={{ teamcity_agent_name }}"
+
+- name: Windows | Agent | Check service
+  ansible.windows.win_service_info:
+    name: TeamCity Agent
+  register: teamcity_agent_check_service
+
+- name: Windows | Agent | Change name Agent, user, pass on config
+  community.windows.win_lineinfile:
+    path: "{{ __teamcity_agent_win_install_path }}\\launcher\\conf\\wrapper.conf"
+    regex: "{{ item.regex }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regex: "^wrapper.ntservice.displayname="
+      line: "wrapper.ntservice.displayname=TeamCity Agent"
+    - regex: "^wrapper.ntservice.account="
+      line: "wrapper.ntservice.account=.\\{{ teamcity_agent_win_service_user }}"
+    - regex: "^wrapper.ntservice.password="
+      line: "wrapper.ntservice.password={{ teamcity_agent_win_service_password }}"
+
+- name: Windows | Agent | Create service
+  when: not teamcity_agent_check_service.exists
+  ansible.windows.win_command: "\"{{ __teamcity_agent_win_install_path }}\\bin\\service.install.bat\""
+  args:
+    chdir: "{{ __teamcity_agent_win_install_path }}\\bin"
+  register: teamcity_agent_register_create_service
+
+- name: Windows | Agent | Start service
+  when: not teamcity_agent_check_service.exists
+  win_service:
+    name: TeamCity Agent
+    start_mode: auto
+    state: started
+    username: "{{ teamcity_agent_win_service_user }}"
+    password: "{{ teamcity_agent_win_service_password }}"
+  register: teamcity_agent_register_win_started
+
+- name: Windows | Agent | Check started
+  when: teamcity_agent_register_win_started.changed
+  ansible.windows.win_wait_for:
+    path: "{{ __teamcity_agent_win_install_path }}\\logs\\teamcity-agent.log"
+    regex: "Updating agent parameters on the server"

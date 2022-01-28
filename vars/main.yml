@@ -1,0 +1,14 @@
+---
+
+####################################################
+# Настройки для LINUX-agent
+# Директория установки
+__teamcity_agent_install_path: /usr/teamcity/agent
+
+####################################################
+# Настройки для WIN-agent
+__teamcity_agent_win_path: c:\teamcity
+
+# Папка для установки клиента
+__teamcity_agent_win_install_path: "C:\\Program Files\\Teamcity"
+

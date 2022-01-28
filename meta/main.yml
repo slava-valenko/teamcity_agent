@@ -1,0 +1,31 @@
+galaxy_info:
+  author: Slava Valenko
+
+  role_name: teamcity_agent
+  namespace: slavavalenko
+
+
+  description: Install Teamcity Agent
+
+  license: MIT
+
+  min_ansible_version: 2.9
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 18
+        - 20
+
+    - name: Windows
+      versions:
+      - All
+
+  galaxy_tags:
+    - ci
+    - packaging
+    - development
+    - teamcity
+
+dependencies: []
+

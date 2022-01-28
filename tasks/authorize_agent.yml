@@ -1,0 +1,13 @@
+---
+
+- name: Authorize Agent | Autorize new Agent
+  delegate_to: localhost
+  no_log: true
+  uri:
+    url: "http://{{ teamcity_agent_server_name }}:{{ teamcity_agent_server_port }}/app/rest/agents/{{ teamcity_agent_name }}/authorized"
+    method: PUT
+    user: "{{ teamcity_agent_server_user_name }}"
+    password: "{{ teamcity_agent_server_user_password }}"
+    body: "true"
+    headers:
+      Content-Type: "text/plain"

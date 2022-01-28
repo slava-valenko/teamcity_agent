@@ -1,0 +1,14 @@
+---
+
+- name: Windows | Users after | Wait until process complete is in the file before continuing
+  when: teamcity_agent_register_create_service.changed
+  ansible.windows.win_wait_for:
+    path: "{{ __teamcity_agent_win_install_path }}\\logs\\upgrade.log"
+    regex: "ver.agent.upgrade.AgentUpgrade - Finish upgrade at"
+
+# Drop Administration role
+- name: Windows | Users after | Absent group Admin in {{ teamcity_agent_win_service_user }}
+  ansible.windows.win_user:
+    name: "{{ teamcity_agent_win_service_user }}"
+    state: present
+    groups: "Users"
