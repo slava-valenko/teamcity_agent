@@ -14,12 +14,12 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - 18
-        - 20
+        - bionic
+        - focal
 
     - name: Windows
       versions:
-      - All
+        - All
 
   galaxy_tags:
     - ci
