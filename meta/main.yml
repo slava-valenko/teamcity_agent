@@ -19,7 +19,7 @@ galaxy_info:
 
     - name: Windows
       versions:
-        - All
+        - all
 
   galaxy_tags:
     - ci
